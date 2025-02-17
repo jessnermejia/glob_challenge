@@ -1,0 +1,20 @@
+FROM python:3.11-slim-buster
+LABEL MAINTAINER="jessner3@gmail.com"
+
+RUN apt-get update \
+  && apt-get install cmake -y \
+  && apt-get install g++ -y
+
+RUN pip3 install --upgrade \
+    pip \
+    setuptools \
+    wheel
+
+RUN pip install poetry==1.8.2
+
+COPY pyproject.toml poetry.lock .env ./
+COPY app ./app
+RUN poetry install --without dev && rm -rf $POETRY_CACHE_DIR
+
+EXPOSE 8080
+ENTRYPOINT ["poetry", "run", "python", "-m", "app.main"]
