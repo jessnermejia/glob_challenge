@@ -3,7 +3,10 @@ from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
 import polars as pl
 from app.database.database import MySQLConn
-from app.common.variables import ALLOWED_EXTENSIONS, DP_SCHEMA, JOBS_SCHEMA, HIRED_SCHEMA
+from app.common.variables import (ALLOWED_EXTENSIONS, DP_SCHEMA, 
+                                  JOBS_SCHEMA, HIRED_SCHEMA, 
+                                  DP_COLUMNS, DP_VALUES, JOB_COLUMNS,
+                                  JOB_VALUES, HIRED_COLUMNS, HIRED_VALUES)
 
 app = Flask(__name__) 
 
@@ -19,7 +22,7 @@ def root():
     return jsonify({"status":"app ok"})
 
 @app.route('/upload', methods=['POST'])
-def prediction():
+def upload():
     if request.method == 'POST':
         if request.files:
             departments = request.files.get('departments', None)
@@ -56,6 +59,39 @@ def prediction():
         
             else:
                 return jsonify({'status': 'FAIL', 'description': 'No selected file'})
+
+@app.route('/bulk', methods=['POST'])
+def bulk_data():
+    if request.method == "POST":
+        data = request.get_json()
+        data_pushed = data.get('data')
+        
+        if len(data_pushed) <= 1000:
+            sql_object = MySQLConn()
+            table_name=data.get('table')
+
+            if table_name == "tbl_department" :
+                table_columns = DP_COLUMNS
+                table_values = DP_VALUES
+            elif table_name == "tbl_job":
+                table_columns = JOB_COLUMNS
+                table_values = JOB_VALUES
+            elif table_name == "tbl_hired_employee":
+                table_columns = HIRED_COLUMNS
+                table_values = HIRED_VALUES
+            else:
+                raise("Need a valid table name")
+            
+            rows_inserted = sql_object.insert_rows(table=table_name,
+                                    columns=table_columns,
+                                    values=table_values,
+                                    rows=data_pushed,
+                                    template_name="insert_table.sql")
+            
+            return jsonify({'status': 'SUCCESS', 'description': f'{rows_inserted} rows was inserted'})
+        else:
+            return jsonify({'status': 'FAIL', 'description': 'Up to 1000 rows can be inserted'})
+        
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)), debug=True)

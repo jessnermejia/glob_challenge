@@ -23,6 +23,18 @@ def get_credentials(env:str = "local"):
         creds = service_account.Credentials.from_service_account_info(json_creds)
     return creds
 
+def read_sql_file(path: str, params:dict) -> str:
+    with open(path, 'r') as file:
+        sql_query = file.read()
+        for key, value in params.items():
+            if value is None:
+                sql_query = sql_query.replace(f"@{key}", "NULL")
+            else:
+                sql_query = sql_query.replace(f"@{key}", str(value))
+        return sql_query
 
-# if __name__ == "__main__":
-#     get_credentials()
+def clean_data(data_df:pl.DataFrame) -> pl.DataFrame:
+    df_cloned = data_df.clone()
+    data_df = data_df.drop_nulls().drop_nans()
+    df_nulls = df_cloned.join(data_df, on=data_df.columns[0], how="anti")
+    return data_df, df_nulls
