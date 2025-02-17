@@ -101,3 +101,21 @@ class MySQLConn:
         db_conn.close()
         
         return data_query_df
+    
+    def upload_backed_file(self, file, table: str):
+        df_data = pl.read_avro(file)
+        print(f"inserting data in {table}")
+        try:
+            db_pool = self.connect_database()
+            df_data.write_database(table_name=table,
+                                connection=db_pool,
+                                if_table_exists= "append",
+                                engine="sqlalchemy")
+            print(f"Data was restored into {table}")
+            response = "SUCCESS"
+        except Exception as e:
+            print(e)
+            response = "FAIL"
+        finally:
+            self.close_conn()
+            return response

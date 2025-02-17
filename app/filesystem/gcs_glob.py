@@ -24,4 +24,12 @@ class GCSConnection():
         except Exception as e:
             print(e)
             return False
+    
+    def download_file(self, source_file, destination_path):
+        blob = self.bucket.blob(source_file)
+        try:
+            blob.download_to_filename(destination_path)
+        except Exception as e:
+            print(e)
+            raise(e)
         
