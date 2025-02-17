@@ -1,0 +1,35 @@
+[tool.poetry]
+name = "glob-challenge"
+version = "0.1.0"
+description = "Package created for data migration PoC"
+authors = ["Jessner Mejia <jessner3@gmail.com>"]
+maintainers = [
+    "Jessner Mejia <jessner3@gmail.com>"
+]
+readme = "README.md"
+packages = [
+    { include = "app"},
+]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+sqlalchemy = "^2.0.38"
+cloud-sql-python-connector = "^1.17.0"
+pymysql = "^1.1.1"
+flask = "^3.1.0"
+polars = "^1.22.0"
+google-cloud-secret-manager = "^2.23.0"
+python-dotenv = "^1.0.1"
+google-cloud-bigquery = "^3.29.0"
+google-cloud-storage = "^3.0.0"
+pandas = "^2.2.3"
+pyarrow = "^19.0.0"
+gcsfs = "^2025.2.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
