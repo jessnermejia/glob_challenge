@@ -2,6 +2,8 @@ import os
 from dotenv import load_dotenv
 import json
 import base64
+import datetime
+import pytz
 from google.cloud import secretmanager
 from google.oauth2 import service_account
 import polars as pl
@@ -38,3 +40,9 @@ def clean_data(data_df:pl.DataFrame) -> pl.DataFrame:
     data_df = data_df.drop_nulls().drop_nans()
     df_nulls = df_cloned.join(data_df, on=data_df.columns[0], how="anti")
     return data_df, df_nulls
+
+def current_time_string():
+    current_time = datetime.datetime.now(tz=pytz.timezone("America/Bogota"))
+    format_string = '%Y-%m-%d %H:%M:%S'
+    date_string = current_time.strftime(format_string)
+    return date_string

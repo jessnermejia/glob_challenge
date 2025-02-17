@@ -84,4 +84,20 @@ class MySQLConn:
         finally:
             db_conn.close()
         
-        return total_rows     
+        return total_rows
+
+    def query_to_df(self, query_name, params_query):
+        path_query = os.path.join(TEMPLATES_SQL_PATH, query_name)
+        db_engine = self.connect_database()
+        db_conn = db_engine.connect()
+
+        query_read = read_sql_file(path=path_query, params = params_query)
+        try:
+            data_query_df = pl.read_database(query=query_read, connection=db_conn)
+        except Exception as e:
+            print(e)
+            raise(e)
+        
+        db_conn.close()
+        
+        return data_query_df

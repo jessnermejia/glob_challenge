@@ -1,9 +1,12 @@
 import os
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
-import polars as pl
+import tempfile
+import datetime
+import pytz
 from app.database.database import MySQLConn
-from app.common.variables import (ALLOWED_EXTENSIONS, DP_SCHEMA, 
+from app.filesystem.gcs_glob import GCSConnection
+from app.common.variables import (ALLOWED_EXTENSIONS, DP_SCHEMA, FILE_PATH, 
                                   JOBS_SCHEMA, HIRED_SCHEMA, 
                                   DP_COLUMNS, DP_VALUES, JOB_COLUMNS,
                                   JOB_VALUES, HIRED_COLUMNS, HIRED_VALUES)
@@ -91,7 +94,29 @@ def bulk_data():
             return jsonify({'status': 'SUCCESS', 'description': f'{rows_inserted} rows was inserted'})
         else:
             return jsonify({'status': 'FAIL', 'description': 'Up to 1000 rows can be inserted'})
-        
+
+@app.route('/backup', methods=['POST'])
+def backup_data():
+    if request.method == "POST":
+        data = request.get_json()
+        obj_gcs = GCSConnection()
+        table_name = data.get("table")
+        params = {
+            "db_name": "glob_challenge",
+            "table_name": table_name
+        }
+        sql_object = MySQLConn()
+        response_df = sql_object.query_to_df(query_name="select_all.sql", params_query=params)
+
+        with tempfile.NamedTemporaryFile(prefix=table_name, dir=FILE_PATH) as file:
+            response_df.write_avro(file.name)
+            response = obj_gcs.upload_file(source_file=file.name, destination=f"backup/{table_name}.avro")
+            if response:
+                status = "SUCCESS"
+            else:
+                status = "FAIL"
+            file.close()
+        return jsonify({"status":status, "details":"tabla backed"})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)), debug=True)
