@@ -2,8 +2,6 @@ import os
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
 import tempfile
-import datetime
-import pytz
 from app.database.database import MySQLConn
 from app.filesystem.gcs_glob import GCSConnection
 from app.common.variables import (ALLOWED_EXTENSIONS, DP_SCHEMA, FILE_PATH, 
@@ -117,6 +115,20 @@ def backup_data():
                 status = "FAIL"
             file.close()
         return jsonify({"status":status, "details":"tabla backed"})
+
+@app.route('/restore', methods=['POST'])
+def restore_table():
+    if request.method == "POST":
+        data_request = request.get_json()
+        table_name = data_request.get("table")
+        gcs_object = GCSConnection()
+        sql_object = MySQLConn()
+        with tempfile.NamedTemporaryFile(prefix=table_name, dir=FILE_PATH) as lc_file:
+            gcs_object.download_file(source_file=f"backup/{table_name}.avro",
+                                     destination_path=lc_file.name)
+            status = sql_object.upload_backed_file(file=lc_file.name, table=table_name)
+            lc_file.close()
+        return jsonify({"status":status, "details":f"{table_name} backed up"})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)), debug=True)
