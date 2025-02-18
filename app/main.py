@@ -4,6 +4,7 @@ from werkzeug.utils import secure_filename
 import tempfile
 from app.database.database import MySQLConn
 from app.filesystem.gcs_glob import GCSConnection
+from app.database.bigquery_glob import BigqueryConn
 from app.common.variables import (ALLOWED_EXTENSIONS, DP_SCHEMA, FILE_PATH, 
                                   JOBS_SCHEMA, HIRED_SCHEMA, 
                                   DP_COLUMNS, DP_VALUES, JOB_COLUMNS,
@@ -129,6 +130,39 @@ def restore_table():
             status = sql_object.upload_backed_file(file=lc_file.name, table=table_name)
             lc_file.close()
         return jsonify({"status":status, "details":f"{table_name} backed up"})
+
+@app.route('/hires_q', methods=['GET'])
+def get_hires_by_q():
+    if request.method == "GET":
+        data_request = request.get_json()
+        year = data_request.get("year")
+        sql_object = MySQLConn()
+        bq_object = BigqueryConn()
+        try:
+            data = sql_object.query_to_df(query_name="hires_by_q.sql", params_query={"year": year})
+            pivoted_df = data.pivot("q", index=["department","job"], values="employee", aggregate_function="len")
+            print(pivoted_df)
+            status = bq_object.load_df_to_table(df=pivoted_df, table="hires_by_q")
+        except Exception as e:
+            print(e)
+            status = "FAIL"
+        return jsonify({"status": status, "details": "table hires_by_q was updated"})
+
+@app.route('/hires_depa', methods=['GET'])
+def get_hires_by_department():
+    if request.method == "GET":
+        data_request = request.get_json()
+        year = data_request.get("year")
+        sql_object = MySQLConn()
+        bq_object = BigqueryConn()
+        try:
+            data = sql_object.query_to_df(query_name="hires_by_dpt.sql", params_query={"year": year})
+            print(data)
+            status = bq_object.load_df_to_table(df=data, table="hires_by_dpt")
+        except Exception as e:
+            print(e)
+            status = "FAIL"
+        return jsonify({"status": status, "details": "table hires_by_dpt was updated"})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)), debug=True)
