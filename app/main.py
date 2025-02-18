@@ -131,7 +131,7 @@ def restore_table():
             lc_file.close()
         return jsonify({"status":status, "details":f"{table_name} backed up"})
 
-@app.route('/hires', methods=['GET'])
+@app.route('/hires_q', methods=['GET'])
 def get_hires_by_q():
     if request.method == "GET":
         data_request = request.get_json()
@@ -147,6 +147,22 @@ def get_hires_by_q():
             print(e)
             status = "FAIL"
         return jsonify({"status": status, "details": "table hires_by_q was updated"})
+
+@app.route('/hires_depa', methods=['GET'])
+def get_hires_by_department():
+    if request.method == "GET":
+        data_request = request.get_json()
+        year = data_request.get("year")
+        sql_object = MySQLConn()
+        bq_object = BigqueryConn()
+        try:
+            data = sql_object.query_to_df(query_name="hires_by_dpt.sql", params_query={"year": year})
+            print(data)
+            status = bq_object.load_df_to_table(df=data, table="hires_by_dpt")
+        except Exception as e:
+            print(e)
+            status = "FAIL"
+        return jsonify({"status": status, "details": "table hires_by_dpt was updated"})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 8080)), debug=True)
