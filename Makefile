@@ -40,11 +40,11 @@ push_gcp_app:
 	docker push ${CHALLENGE_IMAGE}
 	@echo "Pushed ${IMAGE_GCP_NAME} into ${CHALLENGE_IMAGE}"
 
-build_and_push: build_model push_model
+build_and_push_gcp: build_gcp_app push_gcp_app
 
 configure_docker:
 	gcloud auth configure-docker
 
-deploy_model:
-	gcloud run deploy ${SERVICE_NAME} --image ${MODEL_IMAGE}
+deploy_app:
+	gcloud run deploy ${SERVICE_NAME} --image ${CHALLENGE_IMAGE}
 
