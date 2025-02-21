@@ -13,8 +13,8 @@ SERVICE_NAME = gcp-glob-challenge
 build_local_app:
 	@echo "Building image ${IMAGE_LOCAL_NAME} for local"
 	docker buildx build \
-    -t ${IMAGE_LOCAL_NAME}:latest \
-	-f Dockerfile.back .
+    -t ${IMAGE_LOCAL_NAME} \
+	-f Dockerfile.local .
 	@echo "${IMAGE_LOCAL_NAME} for local was built"
 
 # Running a new image of app
@@ -23,14 +23,14 @@ run_local_app:
 	docker run --name glob-challenge \
 	-ti \
     --rm -p 8080:8080 \
-    ${IMAGE_LOCAL_NAME}:latest
+    ${IMAGE_LOCAL_NAME}
 
 build_gcp_app:
 	@echo "Building image ${IMAGE_GCP_NAME}"
 	docker buildx build \
 	--platform linux/amd64 \
 	-t ${IMAGE_GCP_NAME} \
-	-f Dockerfile.back .
+	-f Dockerfile.gcp .
 	@echo "${IMAGE_GCP_NAME} was built"
 
 push_gcp_app:
